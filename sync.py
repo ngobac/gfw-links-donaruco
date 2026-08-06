@@ -1,5 +1,5 @@
 import datetime, os, time
-from common import (ID_FIELD, agol_token, build_url, canonical, fetch_features,
+from common import (agol_token, build_url, canonical, fetch_features, get_id,
                     geom_hash, load_links, notify, post_geostore, save_links)
 
 TEMPLATE = open("map_template.txt", encoding="utf-8").read().strip()
@@ -15,9 +15,13 @@ def main():
     feats = fetch_features(agol_token(), WHERE)
     print(f"AGOL tra ve {len(feats)} lo")
 
-    plots, changes = [], []
+    plots, changes, seen = [], [], set()
     for f in feats:
-        id_lo = str(f["properties"][ID_FIELD])
+        id_lo = get_id(f["properties"])
+        if id_lo in seen:                          # AGOL có bản ghi trùng mã
+            changes.append(f"TRUNG LAP tren AGOL (bo ban sao): {id_lo}")
+            continue
+        seen.add(id_lo)
         cg = canonical(f["geometry"])
         h = geom_hash(cg)
         rec = old.get(id_lo)

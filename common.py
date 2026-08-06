@@ -58,6 +58,14 @@ def fetch_features(token, where="1=1"):
             return feats
         offset += 1000
 
+def get_id(props):
+    """Lấy mã lô, không phân biệt hoa thường tên field (AGOL có thể đổi case)."""
+    for k, v in props.items():
+        if k.lower() == ID_FIELD.lower():
+            return str(v)
+    sys.exit(f"Khong thay field {ID_FIELD} trong properties. "
+             f"Cac field co: {list(props)}")
+
 def canonical(geom):
     """Làm tròn 6 số lẻ + serialize ổn định để hash không nhảy vì jitter."""
     def rnd(c):
