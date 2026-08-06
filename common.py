@@ -18,7 +18,8 @@ def agol_token():
 
 def fetch_features(token, where="1=1"):
     """Query toàn bộ lô từ Feature Layer, phân trang 1000 record/lần."""
-    url = os.environ["AGOL_LAYER_URL"] + "/query"
+    base = os.environ["AGOL_LAYER_URL"].strip().rstrip("/")
+    url = base + "/query"
     feats, offset = [], 0
     while True:
         r = requests.get(url, params={
@@ -26,7 +27,16 @@ def fetch_features(token, where="1=1"):
             "outSR": 4326, "f": "geojson",
             "resultOffset": offset, "resultRecordCount": 1000,
             "token": token}, timeout=120)
-        batch = r.json().get("features", [])
+        try:
+            j = r.json()
+        except ValueError:
+            sys.exit(f"AGOL query khong tra ve JSON (kiem tra lai AGOL_LAYER_URL "
+                     f"- phai la .../FeatureServer/0). HTTP {r.status_code}, "
+                     f"Content-Type: {r.headers.get('content-type')}, "
+                     f"body: {r.text[:500]}")
+        if "error" in j:
+            sys.exit(f"AGOL query bao loi: {j['error']}")
+        batch = j.get("features", [])
         feats += batch
         if len(batch) < 1000:
             return feats
