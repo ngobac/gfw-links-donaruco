@@ -20,8 +20,6 @@ jobs:
           AGOL_LAYER_URL: ${{ secrets.AGOL_LAYER_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # Pilot 20 lô (Bước 4) — xóa dòng dưới khi chạy full 951 lô
-          WHERE_CLAUSE: "IDlomoi IN ('1.04DN.BS.15.149','1.04DN.BS.15.152','1.04DN.CD.05.037','1.04DN.CD.05.057','1.04DN.CM.01.196','1.04DN.CM.01.202','1.04DN.DG.02.074','1.04DN.DG.03.118','1.04DN.HG.01.056','1.04DN.HG.02.061','1.04DN.LT.04.055','1.04DN.LT.04.056','1.04DN.OQ.05.131','1.04DN.OQ.06.109','1.04DN.TB.01.002','1.04DN.TB.06.051','1.04DN.TH.06.060','1.04DN.TH.07.007','1.04DN.TT.02.061','1.04DN.TT.02.113')"
       - name: Commit links.json
         run: |
           git config user.name "gfw-bot"
