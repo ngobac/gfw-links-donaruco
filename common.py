@@ -1,4 +1,5 @@
-import hashlib, json, os, sys, time
+import hashlib, json, os, re, sys, time
+from urllib.parse import urlparse
 import requests
 
 GEOSTORE_URL = "https://production-api.globalforestwatch.org/v1/geostore"
@@ -16,10 +17,25 @@ def agol_token():
         sys.exit(f"Loi lay token AGOL: {j}")
     return j["token"]
 
+def agol_layer_url():
+    """Làm sạch + kiểm tra dạng URL layer; chỉ in gợi ý ẩn danh (repo public)."""
+    base = os.environ["AGOL_LAYER_URL"].strip().rstrip("/")
+    if base.endswith("/FeatureServer"):        # quên chỉ số layer -> thêm /0
+        base += "/0"
+    u = urlparse(base)
+    if not re.search(r"/rest/services/.+/(Feature|Map)Server/\d+$", u.path):
+        sys.exit(
+            "AGOL_LAYER_URL sai dang. Can dang: https://services.arcgis.com/"
+            "<org>/arcgis/rest/services/<TenLayer>/FeatureServer/0\n"
+            f"Chan doan (an danh): host={u.netloc} | "
+            f"co /rest/services/ trong path: {'/rest/services/' in u.path} | "
+            f"ket thuc bang so: {bool(re.search(r'/[0-9]+$', u.path))} | "
+            f"co query string thua: {bool(u.query)}")
+    return base
+
 def fetch_features(token, where="1=1"):
     """Query toàn bộ lô từ Feature Layer, phân trang 1000 record/lần."""
-    base = os.environ["AGOL_LAYER_URL"].strip().rstrip("/")
-    url = base + "/query"
+    url = agol_layer_url() + "/query"
     feats, offset = [], 0
     while True:
         r = requests.get(url, params={
