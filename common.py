@@ -1,9 +1,12 @@
-import hashlib, json, os, re, sys, time
+import hashlib, json, os, re, sys, time, unicodedata
 from urllib.parse import urlparse
 import requests
 
 GEOSTORE_URL = "https://production-api.globalforestwatch.org/v1/geostore"
-ID_FIELD = "IDlomoi"
+ID_FIELD = "idLo_kk"
+HTRANG_FIELD = "hTrang"
+# hTrang bị loại khi chọn giữa các bản ghi trùng mã lô (so sánh sau khi bỏ dấu)
+HTRANG_LOAI = {"K.K", "K.GDP"}
 LINKS_PATH = "docs/links.json"
 
 def agol_token():
@@ -39,7 +42,8 @@ def fetch_features(token, where="1=1"):
     feats, offset = [], 0
     while True:
         r = requests.get(url, params={
-            "where": where, "outFields": ID_FIELD, "returnGeometry": "true",
+            "where": where, "outFields": f"{ID_FIELD},{HTRANG_FIELD}",
+            "returnGeometry": "true",
             "outSR": 4326, "f": "geojson",
             "resultOffset": offset, "resultRecordCount": 1000,
             "token": token}, timeout=120)
@@ -58,13 +62,52 @@ def fetch_features(token, where="1=1"):
             return feats
         offset += 1000
 
-def get_id(props):
-    """Lấy mã lô, không phân biệt hoa thường tên field (AGOL có thể đổi case)."""
+def strip_accents(s):
+    """Chuyển unicode có dấu -> không dấu (kể cả đ/Đ)."""
+    s = s.replace("đ", "d").replace("Đ", "D")
+    s = unicodedata.normalize("NFD", s)
+    return "".join(c for c in s if unicodedata.category(c) != "Mn")
+
+def get_field(props, name):
+    """Tra field không phân biệt hoa thường tên field (AGOL có thể đổi case)."""
     for k, v in props.items():
-        if k.lower() == ID_FIELD.lower():
-            return str(v)
-    sys.exit(f"Khong thay field {ID_FIELD} trong properties. "
-             f"Cac field co: {list(props)}")
+        if k.lower() == name.lower():
+            return v
+    return None
+
+def get_id(props):
+    v = get_field(props, ID_FIELD)
+    if v is None:
+        sys.exit(f"Khong thay field {ID_FIELD} trong properties. "
+                 f"Cac field co: {list(props)}")
+    return strip_accents(str(v)).strip()
+
+def choose_features(feats):
+    """Gộp bản ghi trùng mã lô: ưu tiên hTrang ngoài K.K/K.GĐP; trả (feats, cảnh báo)."""
+    groups, order = {}, []
+    for f in feats:
+        i = get_id(f["properties"])
+        if i not in groups:
+            groups[i] = []
+            order.append(i)
+        groups[i].append(f)
+
+    def ht(f):
+        v = get_field(f["properties"], HTRANG_FIELD)
+        return strip_accents(str(v)).strip() if v is not None else ""
+
+    chosen, warns = [], []
+    for i in order:
+        g = groups[i]
+        if len(g) == 1:
+            chosen.append(g[0])
+            continue
+        pref = [f for f in g if ht(f) not in HTRANG_LOAI]
+        pick = pref[0] if pref else g[0]
+        chosen.append(pick)
+        warns.append(f"TRUNG LAP {i}: {len(g)} ban ghi, "
+                     f"chon hTrang='{ht(pick)}'")
+    return chosen, warns
 
 def canonical(geom):
     """Làm tròn 6 số lẻ + serialize ổn định để hash không nhảy vì jitter."""

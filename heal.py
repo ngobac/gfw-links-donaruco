@@ -1,7 +1,8 @@
 import datetime, time
 import requests
-from common import (GEOSTORE_URL, agol_token, canonical, fetch_features,
-                    get_id, load_links, notify, post_geostore, save_links)
+from common import (GEOSTORE_URL, agol_token, canonical, choose_features,
+                    fetch_features, get_id, load_links, notify, post_geostore,
+                    save_links)
 
 def now():
     return datetime.datetime.now(datetime.timezone(
@@ -23,7 +24,7 @@ def main():
 
         # Geostore bị xóa → hồi sinh bằng cách POST lại đúng GeoJSON từ AGOL
         if geoms is None:
-            feats = fetch_features(agol_token())
+            feats, _ = choose_features(fetch_features(agol_token()))
             geoms = {get_id(f["properties"]): canonical(f["geometry"])
                      for f in feats}
         cg = geoms.get(p["id_lo"])
