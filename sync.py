@@ -1,10 +1,10 @@
-import datetime, os, time
-from common import (agol_token, build_url, canonical, choose_features,
-                    fetch_features, get_id, geom_hash, load_links, notify,
-                    post_geostore, save_links)
+import datetime, os, sys, time
+from common import (LINK_FIELD, agol_token, build_url, canonical,
+                    choose_features, fetch_features, get_id, geom_hash,
+                    load_links, notify, post_geostore, save_links, write_links)
 
 TEMPLATE = open("map_template.txt", encoding="utf-8").read().strip()
-WHERE = os.environ.get("WHERE_CLAUSE", "1=1")   # pilot: "IDlomoi IN ('LT01',...)"
+WHERE = os.environ.get("WHERE_CLAUSE", "1=1")   # pilot: "ProductionPlace IN ('LT01',...)"
 
 def now():
     return datetime.datetime.now(datetime.timezone(
@@ -13,9 +13,10 @@ def now():
 def main():
     data = load_links()
     old = {p["id_lo"]: p for p in data["plots"]}
-    feats = fetch_features(agol_token(), WHERE)
-    print(f"AGOL tra ve {len(feats)} ban ghi")
-    feats, dup_warns = choose_features(feats)
+    token = agol_token()
+    raw = fetch_features(token, WHERE)
+    print(f"AGOL tra ve {len(raw)} ban ghi")
+    feats, dup_warns = choose_features(raw)
     print(f"Con {len(feats)} lo sau khi gop trung lap")
 
     plots, changes = [], list(dup_warns)
@@ -49,9 +50,17 @@ def main():
     data.update({"generated_at": now(), "count": len(plots), "plots": plots})
     save_links(data)
 
+    # Ghi ngược link vào AGOL sau khi đã lưu links.json (lỗi ghi không làm mất link)
+    n, errs = write_links(token, raw, {p["id_lo"]: p["long_url"] for p in plots})
+    print(f"Ghi {LINK_FIELD}: {n} ban ghi, {len(errs)} loi")
+    head = errs + ([f"GHI {LINK_FIELD}: {n} ban ghi"] if n else [])
+    changes = head + changes                        # lỗi + tổng kết lên đầu tin Telegram
+
     if changes:
         notify("SYNC GFW co bien dong:\n" + "\n".join(changes[:50]))
     print(f"Xong. {len(changes)} bien dong.")
+    if errs:
+        sys.exit("\n".join(errs[:20]))
 
 if __name__ == "__main__":
     main()

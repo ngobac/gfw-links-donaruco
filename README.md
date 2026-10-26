@@ -1,16 +1,19 @@
 # gfw-links-donaruco
 
-Pipeline tự động tạo và duy trì link bản đồ Global Forest Watch (GFW) cho ~2.300 lô cao su, phục vụ truy xuất nguồn gốc EUDR.
+Pipeline tự động tạo và duy trì link bản đồ Global Forest Watch (GFW) cho ~2.040 lô cao su, phục vụ truy xuất nguồn gốc EUDR.
 
 ## Sản phẩm bàn giao
 
-`docs/links.json` — danh sách link GFW theo mã lô (`IDlomoi`), tự cập nhật hằng đêm.
+`docs/links.json` — danh sách link GFW theo mã lô (`ProductionPlace`), tự cập nhật hằng đêm.
 
 Quy tắc đọc cho hệ thống truy xuất: lấy `long_url` theo `id_lo`; chỉ hiển thị khi `status` là `alive`/`healed`; `last_checked` thể hiện độ tươi dữ liệu.
 
+Cùng link được ghi ngược vào field `link_gfw` (string 4000) của Feature Layer, để xem trực tiếp trên ArcGIS.
+
 ## Cơ chế
 
-- **SYNC** (01:00 VN hằng đêm): query toàn bộ lô từ AGOL Feature Layer, POST geostore GFW cho lô mới/đổi ranh, cập nhật `docs/links.json`.
+- **SYNC** (01:00 VN hằng đêm): query toàn bộ lô từ AGOL Feature Layer `dnrc_eu_update_26102026`, POST geostore GFW cho lô mới/đổi ranh, cập nhật `docs/links.json`. Bản ghi trống mã lô hoặc không có hình học bị bỏ qua và báo Telegram; layer không có field hiện trạng nên trùng mã lô thì lấy bản ghi đầu.
+- Cuối SYNC: ghi `long_url` vào `link_gfw` cho các bản ghi đang có giá trị khác (lần đầu ghi toàn bộ, sau đó chỉ lô đổi). Layer phải bật **Editing (Update)**; nếu ghi lỗi, `links.json` vẫn được commit, job báo đỏ + Telegram.
 - **HEAL** (08h/16h/24h VN): kiểm tra từng geostore còn sống; nếu bị xóa thì POST lại đúng GeoJSON — nhờ tính determinism của geostore v1, ID (và URL) không đổi.
 - Biến động (lô mới, đổi ranh, lô bị xóa, link chết) báo qua Telegram.
 

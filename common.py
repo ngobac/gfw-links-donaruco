@@ -3,10 +3,14 @@ from urllib.parse import urlparse
 import requests
 
 GEOSTORE_URL = "https://production-api.globalforestwatch.org/v1/geostore"
-ID_FIELD = "idLo_kk"
-HTRANG_FIELD = "hTrang"
+ID_FIELD = "ProductionPlace"
+# Layer dnrc_eu_update_26102026 không có field hiện trạng -> None (không query, không lọc)
+HTRANG_FIELD = None
 # hTrang bị loại khi chọn giữa các bản ghi trùng mã lô (so sánh sau khi bỏ dấu)
 HTRANG_LOAI = {"K.K", "K.GDP"}
+# Field trên AGOL nhận lại long_url (string 4000) — SYNC ghi ngược sau mỗi lần chạy
+LINK_FIELD = "link_gfw"
+OID_FIELD = "OBJECTID"
 LINKS_PATH = "docs/links.json"
 
 def agol_token():
@@ -42,7 +46,8 @@ def fetch_features(token, where="1=1"):
     feats, offset = [], 0
     while True:
         r = requests.get(url, params={
-            "where": where, "outFields": f"{ID_FIELD},{HTRANG_FIELD}",
+            "where": where, "outFields": ",".join(
+                f for f in (OID_FIELD, ID_FIELD, HTRANG_FIELD, LINK_FIELD) if f),
             "returnGeometry": "true",
             "outSR": 4326, "f": "geojson",
             "resultOffset": offset, "resultRecordCount": 1000,
@@ -76,27 +81,35 @@ def get_field(props, name):
     return None
 
 def get_id(props):
-    v = get_field(props, ID_FIELD)
-    if v is None:
+    """Mã lô không dấu; '' nếu field có nhưng giá trị rỗng/null."""
+    if not any(k.lower() == ID_FIELD.lower() for k in props):
         sys.exit(f"Khong thay field {ID_FIELD} trong properties. "
                  f"Cac field co: {list(props)}")
-    return strip_accents(str(v)).strip()
+    v = get_field(props, ID_FIELD)
+    return strip_accents(str(v)).strip() if v is not None else ""
 
 def choose_features(feats):
-    """Gộp bản ghi trùng mã lô: ưu tiên hTrang ngoài K.K/K.GĐP; trả (feats, cảnh báo)."""
-    groups, order = {}, []
+    """Bỏ bản ghi thiếu mã lô/hình học; gộp bản ghi trùng mã lô (ưu tiên hTrang
+    ngoài K.K/K.GĐP nếu layer có hTrang); trả (feats, cảnh báo)."""
+    groups, order, warns = {}, [], []
     for f in feats:
         i = get_id(f["properties"])
+        if not i or not f.get("geometry"):
+            warns.append(f"BO QUA OBJECTID {f.get('id')}: "
+                         f"{'trong ma lo' if not i else 'khong co hinh hoc'}")
+            continue
         if i not in groups:
             groups[i] = []
             order.append(i)
         groups[i].append(f)
 
     def ht(f):
+        if not HTRANG_FIELD:
+            return ""
         v = get_field(f["properties"], HTRANG_FIELD)
         return strip_accents(str(v)).strip() if v is not None else ""
 
-    chosen, warns = [], []
+    chosen = []
     for i in order:
         g = groups[i]
         if len(g) == 1:
@@ -132,6 +145,32 @@ def post_geostore(canon_geom):
 def build_url(geostore_id, template):
     return (f"https://www.globalforestwatch.org/map/geostore/"
             f"{geostore_id}/?{template}")
+
+def write_links(token, feats, url_by_id):
+    """Ghi long_url vào LINK_FIELD cho bản ghi AGOL đang có giá trị khác
+    (kể cả bản ghi trùng mã lô); trả (số bản ghi đã ghi, danh sách lỗi)."""
+    edits = []
+    for f in feats:
+        p = f["properties"]
+        url = url_by_id.get(get_id(p))
+        if url and get_field(p, LINK_FIELD) != url:
+            edits.append({"attributes": {OID_FIELD: get_field(p, OID_FIELD),
+                                         LINK_FIELD: url}})
+    done, errs = 0, []
+    for k in range(0, len(edits), 250):
+        r = requests.post(agol_layer_url() + "/updateFeatures", data={
+            "features": json.dumps(edits[k:k + 250]), "rollbackOnFailure": "false",
+            "f": "json", "token": token}, timeout=300)
+        j = r.json()
+        if "error" in j:      # thường do layer chưa bật Editing (Update)
+            return done, errs + [f"LOI GHI {LINK_FIELD}: {j['error']}"]
+        for res in j.get("updateResults", []):
+            if res.get("success"):
+                done += 1
+            else:
+                errs.append(f"LOI GHI {LINK_FIELD} {OID_FIELD}="
+                            f"{res.get('objectId')}: {res.get('error')}")
+    return done, errs
 
 def load_links():
     if os.path.exists(LINKS_PATH):

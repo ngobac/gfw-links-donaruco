@@ -21,6 +21,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       - name: Commit links.json
+        if: ${{ !cancelled() }}         # vẫn commit khi bước ghi link_gfw lỗi
         run: |
           git config user.name "gfw-bot"
           git config user.email "actions@users.noreply.github.com"
