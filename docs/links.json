@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-20T15:09:48+07:00",
+ "generated_at": "2026-11-20T21:26:27+07:00",
  "count": 2041,
  "plots": [
   {
@@ -13972,12 +13972,12 @@
   },
   {
    "id_lo": "1.04DN.OQ.13.127",
-   "long_url": "https://www.globalforestwatch.org/map/geostore/2d9cc1ae89d6698b178fc7db333cbbfe/?map=eyJkYXRhc2V0cyI6W3siZGF0YXNldCI6InBvbGl0aWNhbC1ib3VuZGFyaWVzIiwibGF5ZXJzIjpbImRpc3B1dGVkLXBvbGl0aWNhbC1ib3VuZGFyaWVzIiwicG9saXRpY2FsLWJvdW5kYXJpZXMiXSwib3BhY2l0eSI6MSwidmlzaWJpbGl0eSI6dHJ1ZX0seyJkYXRhc2V0IjoidHJlZS1jb3Zlci1sb3NzIiwibGF5ZXJzIjpbInRyZWUtY292ZXItbG9zcyJdLCJvcGFjaXR5IjoxLCJ2aXNpYmlsaXR5Ijp0cnVlLCJ0aW1lbGluZVBhcmFtcyI6eyJzdGFydERhdGUiOiIyMDIxLTAxLTAxIiwiZW5kRGF0ZSI6IjIwMjUtMTItMzEiLCJ0cmltRW5kRGF0ZSI6IjIwMjUtMTItMzEifX0seyJkYXRhc2V0IjoidHJlZS1wbGFudGF0aW9ucyIsIm9wYWNpdHkiOjEsInZpc2liaWxpdHkiOnRydWUsImxheWVycyI6WyJ0cmVlLXBsYW50YXRpb25zIl19XSwiY2FuQm91bmQiOnRydWV9",
-   "geostore_id": "2d9cc1ae89d6698b178fc7db333cbbfe",
-   "geom_hash": "3b80c160652dd009c6f2ff2bbaeca9a1",
+   "long_url": "https://www.globalforestwatch.org/map/geostore/035836f02d2c2595e5e5f31045e9abb7/?map=eyJkYXRhc2V0cyI6W3siZGF0YXNldCI6InBvbGl0aWNhbC1ib3VuZGFyaWVzIiwibGF5ZXJzIjpbImRpc3B1dGVkLXBvbGl0aWNhbC1ib3VuZGFyaWVzIiwicG9saXRpY2FsLWJvdW5kYXJpZXMiXSwib3BhY2l0eSI6MSwidmlzaWJpbGl0eSI6dHJ1ZX0seyJkYXRhc2V0IjoidHJlZS1jb3Zlci1sb3NzIiwibGF5ZXJzIjpbInRyZWUtY292ZXItbG9zcyJdLCJvcGFjaXR5IjoxLCJ2aXNpYmlsaXR5Ijp0cnVlLCJ0aW1lbGluZVBhcmFtcyI6eyJzdGFydERhdGUiOiIyMDIxLTAxLTAxIiwiZW5kRGF0ZSI6IjIwMjUtMTItMzEiLCJ0cmltRW5kRGF0ZSI6IjIwMjUtMTItMzEifX0seyJkYXRhc2V0IjoidHJlZS1wbGFudGF0aW9ucyIsIm9wYWNpdHkiOjEsInZpc2liaWxpdHkiOnRydWUsImxheWVycyI6WyJ0cmVlLXBsYW50YXRpb25zIl19XSwiY2FuQm91bmQiOnRydWV9",
+   "geostore_id": "035836f02d2c2595e5e5f31045e9abb7",
+   "geom_hash": "c4f5640178b88a65b4af58588cb2f876",
    "status": "alive",
-   "last_checked": "2026-11-20T15:07:11+07:00",
-   "geom_updated_at": "2026-10-26T14:37:44+07:00"
+   "last_checked": "2026-11-20T21:26:27+07:00",
+   "geom_updated_at": "2026-11-20T21:26:27+07:00"
   },
   {
    "id_lo": "1.04DN.CD.25.297",
